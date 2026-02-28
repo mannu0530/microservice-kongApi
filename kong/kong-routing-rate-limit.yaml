@@ -5,7 +5,7 @@ services:
     plugins:
       - name: rate-limiting
         config:
-          minute: 5
+          minute: 10
           policy: local
           fault_tolerant: true
     routes:
