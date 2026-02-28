@@ -1,0 +1,82 @@
+# =============================================================================
+# Kong Gateway Helm Values - With Routes and Rate Limiting
+# =============================================================================
+
+# Deployment settings
+replicaCount: 1
+
+# Image configuration
+image:
+  repository: kong
+  tag: "3.9"
+  pullPolicy: IfNotPresent
+
+# Environment variables
+env:
+  # Database mode: off (DB-less)
+  database: "off"
+  
+  # Kong proxy settings
+  proxy_listen: "0.0.0.0:8000"
+  
+  # Admin API (needed for declarative config)
+  admin_listen: "0.0.0.0:8001"
+
+# Proxy service
+proxy:
+  type: NodePort
+  httpNodePort: 31239
+  tlsNodePort: 31370
+  annotations:
+    # Enable rate limiting
+    konghq.com/plugins: rate-limiting
+
+# Admin API service
+admin:
+  enabled: true
+  type: NodePort
+  httpNodePort: 32080
+
+# Ingress controller
+ingressController:
+  enabled: false
+  installCRDs: false
+
+# Init container to configure Kong
+initContainers:
+- name: kong-init
+  image: busybox:1.36
+  command: ["/bin/sh", "-c"]
+  args:
+  - |
+    # Wait for Kong to start
+    sleep 5
+    # Configure Kong with routes using declarative config
+    cat > /tmp/kong.yaml << 'EOFCONFIG'
+    _format_version: "3.0"
+    services:
+    - name: user-microservice
+      url: http://user-microservice-user-microservice.user-ms.svc.cluster.local:80
+      routes:
+      - name: user-service-route
+        paths:
+        - /
+        strip_path: true
+      plugins:
+      - name: rate-limiting
+        config:
+          minute: 10
+          policy: local
+    EOFCONFIG
+    # Post config to Kong Admin API
+    curl -X POST http://localhost:8001/config -F "config=@/tmp/kong.yaml" || true
+  volumeMounts: []
+
+# Resources
+resources:
+  limits:
+    cpu: 1000m
+    memory: 512Mi
+  requests:
+    cpu: 100m
+    memory: 256Mi

@@ -1,0 +1,25 @@
+# =============================================================================
+# Kubernetes ConfigMap for User Microservice
+# =============================================================================
+# Stores non-sensitive configuration
+# =============================================================================
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: user-microservice-config
+  labels:
+    app: user-microservice
+data:
+  # Database configuration
+  DATABASE_URL: "user_service/users.db"
+  
+  # Server configuration
+  HOST: "0.0.0.0"
+  PORT: "8000"
+  
+  # JWT configuration
+  JWT_EXPIRATION_MINUTES: "60"
+  JWT_ALGORITHM: "HS256"
+  
+  # Application settings
+  DEBUG: "false"

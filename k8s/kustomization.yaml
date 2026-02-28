@@ -1,0 +1,30 @@
+# =============================================================================
+# Kustomization for User Microservice
+# =============================================================================
+# Use: kubectl apply -k .
+# =============================================================================
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: default
+
+# Common labels
+labels:
+  - pairs:
+      app: user-microservice
+
+# Resources
+resources:
+  - secret.yaml
+  - configmap.yaml
+  - pvc.yaml
+  - deployment.yaml
+  - service.yaml
+
+# Image settings (overrides the image in deployment)
+images:
+  - name: user-microservice
+    # REPLACE THIS with your image URL
+    # Example: docker.io/your-registry/user-microservice:latest
+    newName: user-microservice
+    newTag: latest

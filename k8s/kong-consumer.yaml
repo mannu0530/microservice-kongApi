@@ -1,0 +1,28 @@
+# Kong Consumer for JWT authentication
+apiVersion: configuration.konghq.com/v1
+kind: KongConsumer
+metadata:
+  name: user-service-consumer
+  namespace: default
+  annotations:
+    kubernetes.io/ingress.class: kong
+username: user-service
+credentials:
+  - user-service-jwt
+---
+# JWT Credential for the consumer
+apiVersion: configuration.konghq.com/v1
+kind: KongCredential
+metadata:
+  name: user-service-jwt
+  namespace: default
+  annotations:
+    kubernetes.io/ingress.class: kong
+type: jwt
+consumer_ref: user-service-consumer
+# The key should match the "iss" claim in the JWT token
+key: user-microservice
+# The secret is the JWT_SECRET used by the microservice (base64 encoded)
+# "dev-secret-key-change-in-production" in base64
+secret: ZGV2LXNlY3JldC1rZXktY2hhbmdlLWluLXVwZHVjdA==
+algorithm: HS256

@@ -1,0 +1,26 @@
+# FastAPI - Web framework for building APIs
+fastapi==0.109.0
+
+# Uvicorn - ASGI server for running FastAPI
+uvicorn==0.27.0
+
+# SQLAlchemy - ORM for database operations
+sqlalchemy==2.0.25
+
+# SQLite database (included in Python standard library, but listed for clarity)
+# No external dependency needed
+
+# Pydantic - Data validation and settings management
+pydantic==2.5.3
+
+# PyJWT - JWT token handling
+PyJWT==2.8.0
+
+# bcrypt - Password hashing
+bcrypt==4.1.2
+
+# python-dotenv - Environment variable management
+python-dotenv==1.0.0
+
+# python-multipart - Form data parsing for FastAPI
+python-multipart==0.0.6

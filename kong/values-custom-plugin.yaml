@@ -1,0 +1,117 @@
+# =============================================================================
+# Kong Helm Values - Custom Plugin Support
+# =============================================================================
+# This values file adds custom Lua plugins to Kong
+# =============================================================================
+
+# Deployment configuration
+deployment:
+  daemonset: false
+  replicas: 1
+
+# Environment variables
+env:
+  # Database mode: off for DB-less
+  database: "off"
+  # Log level
+  log_level: notice
+  # Enable proxy mode
+  proxy_access_log: /dev/stdout
+  admin_access_log: /dev/stderr
+  # Custom plugins to load
+  plugins: "bundled,custom-header"
+
+# Image configuration
+image:
+  repository: kong
+  tag: "3.4"
+  pullPolicy: IfNotPresent
+
+# Kubernetes Ingress Controller configuration
+ingressController:
+  enabled: true
+  ingressClass: kong
+  installCRDs: false
+  electionID: kong-ingress-controller-leader
+
+# Custom plugin volume mount
+# This mounts the custom Lua plugin into Kong's plugin directory
+volumeMounts:
+  - name: kong-plugins
+    mountPath: /usr/local/share/lua/5.1/kong/plugins/custom-header
+    readOnly: true
+
+volumes:
+  - name: kong-plugins
+    configMap:
+      name: kong-custom-plugins
+
+# Service configuration
+service:
+  type: NodePort
+  http:
+    enabled: true
+    nodePort: 30080
+    ports:
+      http: 80
+  https:
+    enabled: false
+  metrics:
+    enabled: true
+    port: 8100
+
+# Admin API configuration
+admin:
+  enabled: true
+  http:
+    enabled: true
+    ports:
+      admin: 8001
+  type: ClusterIP
+  tls:
+    enabled: false
+
+# Probe configuration
+readinessProbe:
+  httpGet:
+    path: /status/ready
+    port: 8000
+    scheme: HTTP
+  initialDelaySeconds: 10
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 5
+
+livenessProbe:
+  httpGet:
+    path: /status/ready
+    port: 8000
+    scheme: HTTP
+  initialDelaySeconds: 10
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 5
+
+# Resources configuration
+resources:
+  limits:
+    cpu: 1000m
+    memory: 1Gi
+  requests:
+    cpu: 100m
+    memory: 512Mi
+
+# Pod security context
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  fsGroup: 1000
+
+# Container security context
+containerSecurityContext:
+  capabilities:
+    drop:
+      - ALL
+  readOnlyRootFilesystem: false
+  runAsUser: 1000
+  allowPrivilegeEscalation: false

@@ -1,0 +1,19 @@
+# =============================================================================
+# PersistentVolumeClaim for SQLite Database
+# =============================================================================
+# Provides persistent storage for the SQLite database
+# =============================================================================
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: user-microservice-pvc
+  labels:
+    app: user-microservice
+spec:
+  # For Minikube use standard (default storageclass)
+  storageClassName: standard
+  accessModes:
+    - ReadWriteOnce  # Volume can be mounted as read-write by a single node
+  resources:
+    requests:
+      storage: 1Gi  # Request 1GB of storage

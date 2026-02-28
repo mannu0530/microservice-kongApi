@@ -1,0 +1,90 @@
+# =============================================================================
+# Kong Declarative Configuration (DB-less mode)
+# =============================================================================
+# IP Whitelist Configuration for API Gateway
+# =============================================================================
+
+_format_version: "3.0"
+_transform: true
+
+# -----------------------------------------------------------------------------
+# Global Plugins (applied at gateway level)
+# -----------------------------------------------------------------------------
+plugins:
+  # IP Restriction Plugin - Applied globally to all routes
+  # Configurable via environment variables
+  - name: ip-restriction
+    config:
+      # Allow list of IPs/CIDRs - configurable via environment variable
+      # Format: comma-separated list of IPs/CIDRs
+      # Default: localhost and private ranges
+      allow:
+        - 127.0.0.1       # Localhost IPv4
+        - ::1              # Localhost IPv6
+        - 10.0.0.0/8      # Private Class A
+        - 172.16.0.0/12   # Private Class B
+        - 192.168.0.0/16  # Private Class C
+        - 100.64.0.0/10   # Carrier-Grade NAT
+      # deny: []  # Optional: explicit deny list
+
+  # Rate Limiting Plugin - Global default
+  - name: rate-limiting
+    config:
+      minute: 10
+      policy: local
+      fault_tolerant: true
+      hide_client_headers: false
+
+# -----------------------------------------------------------------------------
+# Consumers and JWT Credentials
+# -----------------------------------------------------------------------------
+consumers:
+  - username: api-consumer
+    jwt_secrets:
+      - key: "user-api-key"
+        algorithm: "HS256"
+        secret: "changeme-replace-with-k8s-secret"
+
+# -----------------------------------------------------------------------------
+# Services and Routes
+# -----------------------------------------------------------------------------
+services:
+  # User Microservice - All endpoints
+  - name: user-microservice
+    url: http://user-microservice.default.svc.cluster.local:80
+    
+    # Global plugins for this service
+    plugins:
+      # Rate limiting per service
+      - name: rate-limiting
+        config:
+          minute: 10
+          policy: local
+          fault_tolerant: true
+          hide_client_headers: false
+    
+    routes:
+      # Protected routes - JWT required
+      - name: users-route
+        paths: ["/users"]
+        strip_path: false
+        plugins:
+          # Additional rate limiting for protected routes
+          - name: rate-limiting
+            config:
+              minute: 10
+              policy: local
+      
+      # Public routes - No JWT required
+      - name: health-route
+        paths: ["/health"]
+        strip_path: false
+      
+      - name: verify-route
+        paths: ["/verify"]
+        strip_path: false
+      
+      - name: login-route
+        paths: ["/login"]
+        strip_path: false
+        methods: ["POST"]

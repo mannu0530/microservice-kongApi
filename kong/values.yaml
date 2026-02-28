@@ -1,0 +1,131 @@
+# =============================================================================
+# Kong Gateway OSS Helm Values - DB-less Mode
+# =============================================================================
+# Install Kong Gateway OSS in DB-less mode with plugins enabled
+# =============================================================================
+
+# Deployment configuration
+deployment:
+  daemonset: false
+  replicas: 1
+
+# Environment variables
+env:
+  # Database mode: off for DB-less
+  database: "off"
+  # Log level
+  log_level: notice
+  # Enable proxy mode
+  proxy_access_log: /dev/stdout
+  admin_access_log: /dev/stderr
+
+# Image configuration
+image:
+  repository: kong
+  tag: "3.4"
+  pullPolicy: IfNotPresent
+
+# Kubernetes Ingress Controller configuration
+ingressController:
+  enabled: true
+  # Ingress class name
+  ingressClass: kong
+  # Disable CRD installation (we'll use native k8s resources)
+  installCRDs: false
+  # Election ID for leader election
+  electionID: kong-ingress-controller-leader
+  # Custom resource definitions to watch
+  ingressClassParameters:
+    # Watch all Ingress resources
+    - apiGroups: ["networking.k8s.io"]
+      resources: ["ingresses"]
+      verbs: ["get", "list", "watch"]
+
+# Service configuration
+service:
+  # Service type: NodePort for Minikube
+  type: NodePort
+  # HTTP service configuration
+  http:
+    enabled: true
+    nodePort: 30080
+    ports:
+      http: 80
+  # HTTPS service (disabled for simplicity)
+  https:
+    enabled: false
+  # Metrics port
+  metrics:
+    enabled: true
+    port: 8100
+
+# Admin API configuration (required for ingress controller)
+admin:
+  enabled: true
+  http:
+    enabled: true
+    ports:
+      admin: 8001
+  # Use ClusterIP for internal access
+  type: ClusterIP
+  # Disable TLS for admin
+  tls:
+    enabled: false
+
+# Probe configuration - use /status/ready for Kong 3.x
+# These probes work with Kong 3.x
+readinessProbe:
+  httpGet:
+    path: /status/ready
+    port: 8000
+    scheme: HTTP
+  initialDelaySeconds: 10
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 5
+
+livenessProbe:
+  httpGet:
+    path: /status/ready
+    port: 8000
+    scheme: HTTP
+  initialDelaySeconds: 10
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 5
+
+# Resources configuration
+resources:
+  limits:
+    cpu: 1000m
+    memory: 1Gi
+  requests:
+    cpu: 100m
+    memory: 512Mi
+
+# Pod security context
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  fsGroup: 1000
+
+# Container security context
+containerSecurityContext:
+  capabilities:
+    drop:
+      - ALL
+  readOnlyRootFilesystem: false
+  runAsUser: 1000
+  allowPrivilegeEscalation: false
+
+# Pod annotations for metrics
+podAnnotations:
+  prometheus.io/scrape: "true"
+  prometheus.io/port: "8100"
+  prometheus.io/path: "/metrics"
+
+# Service annotations
+serviceAnnotations:
+  prometheus.io/scrape: "true"
+  prometheus.io/port: "8100"
+  prometheus.io/path: "/metrics"

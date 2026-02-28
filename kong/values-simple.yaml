@@ -1,0 +1,63 @@
+# Simplified Kong Gateway Helm Values
+# DB-less mode with ingress controller managing configuration
+
+# Deployment
+deployment:
+  daemonset: false
+  replicas: 1
+
+# Environment
+env:
+  database: "off"
+  log_level: notice
+  declarative_config: /kong/kong-init.yaml
+
+# Image
+image:
+  repository: kong
+  tag: "3.4"
+  pullPolicy: IfNotPresent
+
+# Ingress Controller
+ingressController:
+  enabled: true
+  ingressClass: kong
+  installCRDs: false
+  electionID: kong-ingress-controller-leader
+
+# Service
+service:
+  type: NodePort
+  http:
+    enabled: true
+    nodePort: 30080
+
+# Admin API
+admin:
+  enabled: true
+  http:
+    enabled: true
+  type: ClusterIP
+  tls:
+    enabled: false
+
+# Volumes for initial config
+extraVolumes:
+  - name: kong-initial-config
+    configMap:
+      name: kong-initial-config
+
+extraVolumeMounts:
+  - name: kong-initial-config
+    mountPath: /kong/kong-init.yaml
+    subPath: kong.yaml
+    readOnly: true
+
+# Resources
+resources:
+  limits:
+    cpu: 1000m
+    memory: 1Gi
+  requests:
+    cpu: 100m
+    memory: 512Mi

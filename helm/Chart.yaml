@@ -1,0 +1,14 @@
+apiVersion: v2
+name: user-microservice
+description: A FastAPI-based user microservice with JWT authentication
+type: application
+version: 1.0.0
+appVersion: "1.0.0"
+keywords:
+  - fastapi
+  - user-management
+  - jwt
+  - sqlite
+maintainers:
+  - name: DevOps Team
+    email: devops@example.com

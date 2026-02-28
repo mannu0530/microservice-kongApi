@@ -1,0 +1,126 @@
+# =============================================================================
+# Kubernetes Deployment for User Microservice
+# =============================================================================
+# Deploys the FastAPI application with all required configurations
+# =============================================================================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: user-microservice
+  labels:
+    app: user-microservice
+    version: v1
+spec:
+  # Number of replicas
+  replicas: 1
+  
+  # Selector for pods managed by this deployment
+  selector:
+    matchLabels:
+      app: user-microservice
+  
+  # Rolling update strategy
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  
+  # Pod template
+  template:
+    metadata:
+      labels:
+        app: user-microservice
+        version: v1
+    spec:
+      # Security context for pod
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+      
+      containers:
+        - name: user-microservice
+          # Image - replace with your registry
+          # docker.io/your-registry/user-microservice:latest
+          image: user-microservice:latest
+          imagePullPolicy: Never
+          
+          ports:
+            - name: http
+              containerPort: 8000
+              protocol: TCP
+          
+          # Environment variables from ConfigMap
+          env:
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: user-microservice-secret
+                  key: JWT_SECRET
+            - name: DATABASE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: user-microservice-config
+                  key: DATABASE_URL
+            - name: HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: user-microservice-config
+                  key: HOST
+            - name: PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: user-microservice-config
+                  key: PORT
+            - name: JWT_EXPIRATION_MINUTES
+              valueFrom:
+                configMapKeyRef:
+                  name: user-microservice-config
+                  key: JWT_EXPIRATION_MINUTES
+            - name: DEBUG
+              valueFrom:
+                configMapKeyRef:
+                  name: user-microservice-config
+                  key: DEBUG
+          
+          # Volume mount for SQLite database
+          volumeMounts:
+            - name: sqlite-storage
+              mountPath: /app/user_service
+          
+          # Resource limits and requests
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "256Mi"
+              cpu: "500m"
+          
+          # Liveness probe
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 3
+          
+          # Readiness probe
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+      
+      # Volumes
+      volumes:
+        - name: sqlite-storage
+          persistentVolumeClaim:
+            claimName: user-microservice-pvc

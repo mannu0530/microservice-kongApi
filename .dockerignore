@@ -1,0 +1,63 @@
+# =============================================================================
+# .dockerignore
+# =============================================================================
+# Exclude files and directories not needed in the Docker image
+# =============================================================================
+
+# Python cache and bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+dist/
+build/
+
+# Virtual environments
+venv/
+env/
+.venv/
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Git
+.git/
+.gitignore
+
+# Testing
+.pytest/
+.coverage
+htmlcov/
+.tox/
+
+# Documentation
+*.md
+!requirements.txt
+
+# Local database files (will be created in container)
+*.db
+*.sqlite
+*.sqlite3
+
+# Docker files (not needed in image)
+Dockerfile
+.dockerignore
+
+# Environment files (use template instead)
+.env
+.env.local
+.env.*.local
+
+# Logs
+*.log
+logs/
+
+# OS files
+.DS_Store
+Thumbs.db

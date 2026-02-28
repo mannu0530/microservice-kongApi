@@ -1,0 +1,174 @@
+# =============================================================================
+# User Microservice Helm Chart - Values
+# =============================================================================
+# Production-ready configuration for user microservice
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# Configuration
+# -----------------------------------------------------------------------------
+config:
+  # Application name
+  name: user-microservice
+  # Namespace
+  namespace: default
+
+# -----------------------------------------------------------------------------
+# Image Configuration
+# -----------------------------------------------------------------------------
+image:
+  repository: user-microservice
+  tag: latest
+  pullPolicy: IfNotPresent
+
+# -----------------------------------------------------------------------------
+# Deployment Configuration
+# -----------------------------------------------------------------------------
+replicaCount: 1
+
+# -----------------------------------------------------------------------------
+# Service Configuration
+# -----------------------------------------------------------------------------
+service:
+  type: ClusterIP
+  port: 80
+  targetPort: 8000
+  containerPort: 8000
+
+# -----------------------------------------------------------------------------
+# Ingress Configuration
+# -----------------------------------------------------------------------------
+ingress:
+  enabled: true
+  className: kong
+  annotations:
+    konghq.com/strip-path: "false"
+    konghq.com/plugins: global-ip-restriction,ip-rate-limiting
+  hosts:
+    - host: localhost
+      paths:
+        - path: /
+          pathType: Prefix
+
+# -----------------------------------------------------------------------------
+# PVC Configuration
+# -----------------------------------------------------------------------------
+persistence:
+  enabled: true
+  storageClass: standard
+  accessMode: ReadWriteOnce
+  size: 1Gi
+  mountPath: /app/data
+
+# -----------------------------------------------------------------------------
+# Secret Management
+# -----------------------------------------------------------------------------
+secrets:
+  # JWT Secret (required)
+  jwtSecret: "change-me-in-production"
+  # Admin username
+  adminUsername: "admin"
+  # Admin password
+  adminPassword: "admin123"
+  # Database password (optional, for future use)
+  databasePassword: ""
+
+# -----------------------------------------------------------------------------
+# Database Configuration
+# -----------------------------------------------------------------------------
+database:
+  url: "/app/data/users.db"
+
+# -----------------------------------------------------------------------------
+# Environment Variables
+# -----------------------------------------------------------------------------
+env:
+  # JWT Configuration
+  jwtSecret: "change-me-in-production"
+  jwtAlgorithm: HS256
+  jwtExpirationMinutes: 60
+  
+  # Database Configuration
+  databaseUrl: "/app/data/users.db"
+  
+  # Application Configuration
+  logLevel: INFO
+  debug: false
+
+# -----------------------------------------------------------------------------
+# Resources Configuration
+# -----------------------------------------------------------------------------
+resources:
+  limits:
+    cpu: 500m
+    memory: 512Mi
+  requests:
+    cpu: 100m
+    memory: 256Mi
+
+# -----------------------------------------------------------------------------
+# Pod Security Context
+# -----------------------------------------------------------------------------
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  fsGroup: 1000
+
+# -----------------------------------------------------------------------------
+# Container Security Context
+# -----------------------------------------------------------------------------
+securityContext:
+  capabilities:
+    drop:
+      - ALL
+  readOnlyRootFilesystem: false
+  runAsUser: 1000
+  allowPrivilegeEscalation: false
+
+# -----------------------------------------------------------------------------
+# Probes Configuration
+# -----------------------------------------------------------------------------
+probes:
+  liveness:
+    enabled: true
+    path: /health
+    initialDelaySeconds: 10
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 3
+  readiness:
+    enabled: true
+    path: /health
+    initialDelaySeconds: 5
+    periodSeconds: 5
+    timeoutSeconds: 3
+    failureThreshold: 3
+
+# -----------------------------------------------------------------------------
+# Health Probes Configuration
+# -----------------------------------------------------------------------------
+health:
+  livenessPath: /health
+  livenessInitialDelay: 30
+  livenessPeriod: 10
+  readinessPath: /health
+  readinessInitialDelay: 5
+  readinessPeriod: 5
+
+# -----------------------------------------------------------------------------
+# Autoscaling Configuration
+# -----------------------------------------------------------------------------
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 3
+  targetCPUUtilizationPercentage: 70
+
+# -----------------------------------------------------------------------------
+# Node Selection
+# -----------------------------------------------------------------------------
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}

@@ -1,0 +1,42 @@
+# =============================================================================
+# Kong IP Whitelist Configuration
+# =============================================================================
+# This ConfigMap stores the IP whitelist for Kong gateway
+# Update the allow list to add/remove CIDR ranges
+# =============================================================================
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: kong-ip-whitelist
+  namespace: default
+  labels:
+    app: kong
+    component: ip-restriction
+data:
+  # Allowed IP addresses and CIDR ranges (comma-separated)
+  # Format: IP addresses or CIDR notation
+  ALLOWED_IPS: |
+    127.0.0.1
+    ::1
+    10.0.0.0/8
+    172.16.0.0/12
+    192.168.0.0/16
+    100.64.0.0/10
+---
+# KongPlugin that references the ConfigMap
+# Note: This is a template - the actual IPs are in the ConfigMap
+apiVersion: configuration.konghq.com/v1
+kind: KongPlugin
+metadata:
+  name: ip-whitelist-from-configmap
+  namespace: default
+plugin: ip-restriction
+config:
+  allow:
+    - 127.0.0.1       # Localhost IPv4
+    - ::1              # Localhost IPv6
+    - 10.0.0.0/8      # Private Class A
+    - 172.16.0.0/12   # Private Class B
+    - 192.168.0.0/16  # Private Class C
+    - 100.64.0.0/10   # Carrier-Grade NAT

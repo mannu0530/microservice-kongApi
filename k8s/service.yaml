@@ -1,0 +1,25 @@
+# =============================================================================
+# Kubernetes Service for User Microservice
+# =============================================================================
+# ClusterIP service for internal communication
+# =============================================================================
+apiVersion: v1
+kind: Service
+metadata:
+  name: user-microservice
+  labels:
+    app: user-microservice
+spec:
+  # Service type - ClusterIP for internal access
+  type: ClusterIP
+  
+  # Ports
+  ports:
+    - name: http
+      port: 80
+      targetPort: 8000
+      protocol: TCP
+  
+  # Selector for pods
+  selector:
+    app: user-microservice

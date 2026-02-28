@@ -1,0 +1,95 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: user-service-public
+  namespace: default
+  annotations:
+    konghq.com/strip-path: "false"
+    # Apply global IP restriction to all routes
+    konghq.com/plugins: global-ip-restriction
+spec:
+  ingressClassName: kong
+  rules:
+    - http:
+        paths:
+          # /health - No JWT required, No rate limiting
+          - path: /health
+            pathType: Exact
+            backend:
+              service:
+                name: user-microservice
+                port:
+                  number: 80
+          # /verify - No JWT required, No rate limiting
+          - path: /verify
+            pathType: Exact
+            backend:
+              service:
+                name: user-microservice
+                port:
+                  number: 80
+          # /login - No JWT required, No rate limiting
+          - path: /login
+            pathType: Exact
+            backend:
+              service:
+                name: user-microservice
+                port:
+                  number: 80
+---
+# Ingress for protected /users endpoint
+# Rate limiting applied: 10 requests/minute per IP
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: user-service-protected
+  namespace: default
+  annotations:
+    konghq.com/strip-path: "false"
+    # Apply global IP restriction + rate limiting
+    konghq.com/plugins: global-ip-restriction,ip-rate-limiting
+spec:
+  ingressClassName: kong
+  rules:
+    - http:
+        paths:
+          # /users - JWT REQUIRED (handled by microservice)
+          # Rate limited: 10 requests/minute per IP
+          - path: /users
+            pathType: Prefix
+            backend:
+              service:
+                name: user-microservice
+                port:
+                  number: 80
+---
+# Global IP Restriction Plugin - Applied to all routes
+# Blocks requests from IPs not in the allow list
+apiVersion: configuration.konghq.com/v1
+kind: KongPlugin
+metadata:
+  name: global-ip-restriction
+  namespace: default
+plugin: ip-restriction
+config:
+  allow:
+    - 127.0.0.1       # Localhost IPv4
+    - ::1              # Localhost IPv6
+    - 10.0.0.0/8      # Private Class A (10.x.x.x)
+    - 172.16.0.0/12   # Private Class B (172.16-31.x.x)
+    - 192.168.0.0/16  # Private Class C (192.168.x.x)
+    - 100.64.0.0/10   # Carrier-Grade NAT (100.64-127.x.x)
+---
+# IP-based Rate Limiting Plugin
+# 10 requests per minute per IP address
+apiVersion: configuration.konghq.com/v1
+kind: KongPlugin
+metadata:
+  name: ip-rate-limiting
+  namespace: default
+plugin: rate-limiting
+config:
+  minute: 10
+  policy: local
+  fault_tolerant: true
+  hide_client_headers: false
